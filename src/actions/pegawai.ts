@@ -42,16 +42,28 @@ export async function getAllPegawai(): Promise<PegawaiCoretax[]> {
       ? session.skpd_ids
       : null
 
-  let query = supabase
-    .from('pegawai_coretax')
-    .select('*, ref_skpd(nama_skpd)')
-    .order('nama_pegawai', { ascending: true })
-    .range(0, 9999)
+  // Ambil total dulu agar tahu berapa batch yang diperlukan
+  let countQ = supabase.from('pegawai_coretax').select('*', { count: 'exact', head: true })
+  if (operatorSkpdIds) countQ = countQ.in('skpd_id', operatorSkpdIds)
+  const { count } = await countQ
+  const total = count ?? 0
+  if (total === 0) return []
 
-  if (operatorSkpdIds) query = query.in('skpd_id', operatorSkpdIds)
+  // Fetch semua baris dalam batch 1000, paralel
+  const BATCH = 1000
+  const batches = await Promise.all(
+    Array.from({ length: Math.ceil(total / BATCH) }, (_, i) => {
+      let q = supabase
+        .from('pegawai_coretax')
+        .select('*, ref_skpd(nama_skpd)')
+        .order('nama_pegawai', { ascending: true })
+        .range(i * BATCH, (i + 1) * BATCH - 1)
+      if (operatorSkpdIds) q = q.in('skpd_id', operatorSkpdIds)
+      return q
+    })
+  )
 
-  const { data } = await query
-  return (data as PegawaiCoretax[]) ?? []
+  return batches.flatMap((b) => (b.data as PegawaiCoretax[]) ?? [])
 }
 
 export async function getPegawai(opts: {
