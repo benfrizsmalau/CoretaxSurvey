@@ -34,6 +34,25 @@ export async function getSkpdList(): Promise<RefSKPD[]> {
   return all
 }
 
+export async function getAllPegawai(): Promise<PegawaiCoretax[]> {
+  const supabase = getSupabaseClient()
+  const session = await getSession()
+  const operatorSkpdIds =
+    session?.role === 'operator' && session.skpd_ids && session.skpd_ids.length > 0
+      ? session.skpd_ids
+      : null
+
+  let query = supabase
+    .from('pegawai_coretax')
+    .select('*, ref_skpd(nama_skpd)')
+    .order('nama_pegawai', { ascending: true })
+
+  if (operatorSkpdIds) query = query.in('skpd_id', operatorSkpdIds)
+
+  const { data } = await query
+  return (data as PegawaiCoretax[]) ?? []
+}
+
 export async function getPegawai(opts: {
   skpdId?: string
   search?: string

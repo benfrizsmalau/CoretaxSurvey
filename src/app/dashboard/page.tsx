@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback, useRef } from 'react'
-import { PegawaiCoretax, RefSKPD, Role, SessionData } from '@/lib/types'
-import { getPegawai, getSkpdList, getStatDashboard } from '@/actions/pegawai'
+import { useState, useEffect, useTransition, useCallback, useMemo } from 'react'
+import { PegawaiCoretax, RefSKPD, Role, SessionData, StatDashboard } from '@/lib/types'
+import { getAllPegawai, getSkpdList } from '@/actions/pegawai'
 import { getSession } from '@/actions/auth'
 import { StatCards } from '@/components/dashboard/StatCards'
 import { PegawaiTable } from '@/components/dashboard/PegawaiTable'
@@ -16,52 +16,76 @@ import { Search, ChevronLeft, ChevronRight, Plus, Building2 } from 'lucide-react
 const PAGE_SIZE = 50
 
 export default function DashboardPage() {
-  const [pegawai, setPegawai] = useState<PegawaiCoretax[]>([])
+  const [allPegawai, setAllPegawai] = useState<PegawaiCoretax[]>([])
   const [skpdList, setSkpdList] = useState<RefSKPD[]>([])
-  const [stats, setStats] = useState({ total: 0, validasi_sukses: 0, sedang_proses: 0, belum_terdaftar: 0, pns_total: 0, p3k_total: 0 })
   const [role, setRole] = useState<Role>('operator')
   const [operatorSession, setOperatorSession] = useState<SessionData | null>(null)
   const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [skpdFilter, setSkpdFilter] = useState('')
   const [jenisFilter, setJenisFilter] = useState<'' | 'PNS' | 'P3K'>('')
   const [page, setPage] = useState(1)
-  const [totalCount, setTotalCount] = useState(0)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
 
+  // Load semua data sekali — pencarian & filter setelah ini tidak perlu ke server
   const loadData = useCallback(() => {
     startTransition(async () => {
-      const [pegawaiResult, skpd, stat, session] = await Promise.all([
-        getPegawai({ skpdId: skpdFilter || undefined, search: debouncedSearch || undefined, jenisPegawai: jenisFilter || undefined, page, pageSize: PAGE_SIZE }),
+      const [allData, skpd, session] = await Promise.all([
+        getAllPegawai(),
         getSkpdList(),
-        getStatDashboard({ jenisPegawai: jenisFilter || undefined }),
         getSession(),
       ])
-      setPegawai(pegawaiResult.data)
-      setTotalCount(pegawaiResult.count)
+      setAllPegawai(allData)
       setSkpdList(skpd)
-      setStats(stat)
       if (session) { setRole(session.role); setOperatorSession(session) }
     })
-  }, [debouncedSearch, skpdFilter, jenisFilter, page])
-
-  useEffect(() => {
-    clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => {
-      setDebouncedSearch(search)
-      setPage(1)
-    }, 300)
-    return () => clearTimeout(searchTimer.current)
-  }, [search])
+  }, [])
 
   useEffect(() => { loadData() }, [loadData])
 
+  // Statistik dihitung di browser — langsung, tanpa request
+  const stats = useMemo((): StatDashboard => {
+    const base = jenisFilter
+      ? allPegawai.filter((p) => p.jenis_pegawai === jenisFilter)
+      : allPegawai
+    return {
+      total: base.length,
+      validasi_sukses: base.filter((p) => p.status_aktivasi === 'Validasi Sukses').length,
+      sedang_proses: base.filter((p) =>
+        p.status_aktivasi === 'Aktivasi Akun' || p.status_aktivasi === 'Pembuatan KO DJP'
+      ).length,
+      belum_terdaftar: base.filter((p) => p.status_aktivasi === 'Belum Terdaftar').length,
+      pns_total: allPegawai.filter((p) => p.jenis_pegawai === 'PNS').length,
+      p3k_total: allPegawai.filter((p) => p.jenis_pegawai === 'P3K').length,
+    }
+  }, [allPegawai, jenisFilter])
+
+  // Filter di browser — pencarian nama < 5ms, tanpa debounce, tanpa server
+  const filtered = useMemo(() => {
+    let result = allPegawai
+    if (jenisFilter) result = result.filter((p) => p.jenis_pegawai === jenisFilter)
+    if (skpdFilter) result = result.filter((p) => p.skpd_id === skpdFilter)
+    if (search) {
+      const q = search.toLowerCase()
+      result = result.filter(
+        (p) =>
+          p.nama_pegawai.toLowerCase().includes(q) ||
+          p.nip_pegawai.toLowerCase().includes(q)
+      )
+    }
+    return result
+  }, [allPegawai, jenisFilter, skpdFilter, search])
+
+  const totalCount = filtered.length
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
+  const pegawai = useMemo(
+    () => filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [filtered, page]
+  )
+
   const selectedSkpdName =
-    skpdFilter ? skpdList.find((skpd) => skpd.id === skpdFilter)?.nama_skpd ?? 'SKPD dipilih' : 'Semua SKPD'
+    skpdFilter ? skpdList.find((s) => s.id === skpdFilter)?.nama_skpd ?? 'SKPD dipilih' : 'Semua SKPD'
 
   return (
     <div className="space-y-6">
@@ -103,11 +127,14 @@ export default function DashboardPage() {
           <Input
             placeholder="Cari NIP atau Nama..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
             className="pl-9 bg-slate-800/50 border-slate-700 text-slate-100 placeholder:text-slate-500"
           />
         </div>
-        <Select value={skpdFilter || 'all'} onValueChange={(v) => { setSkpdFilter(v === 'all' || !v ? '' : v); setPage(1) }}>
+        <Select
+          value={skpdFilter || 'all'}
+          onValueChange={(v) => { setSkpdFilter(v === 'all' || !v ? '' : v); setPage(1) }}
+        >
           <SelectTrigger className="h-10 w-full min-w-0 bg-slate-800/50 text-slate-300 border-slate-700 sm:w-[32rem] lg:w-[40rem]">
             <span className="block min-w-0 flex-1 truncate text-left" title={selectedSkpdName}>
               {selectedSkpdName}
@@ -147,10 +174,22 @@ export default function DashboardPage() {
         <div className="flex items-center justify-between text-sm text-slate-400">
           <span>{totalCount.toLocaleString('id-ID')} pegawai · Hal {page} dari {totalPages}</span>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="border-slate-700 text-slate-300 h-8">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="border-slate-700 text-slate-300 h-8"
+            >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages} className="border-slate-700 text-slate-300 h-8">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              className="border-slate-700 text-slate-300 h-8"
+            >
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -170,7 +209,6 @@ export default function DashboardPage() {
         skpdList={skpdList}
         onClose={() => setIsAddOpen(false)}
         onCreated={(options) => {
-          setPage(1)
           loadData()
           if (!options?.keepOpen) setIsAddOpen(false)
         }}
