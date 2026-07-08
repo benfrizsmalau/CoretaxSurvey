@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback } from 'react'
+import { useState, useEffect, useTransition, useCallback, useRef } from 'react'
 import { PegawaiCoretax, RefSKPD, Role, SessionData } from '@/lib/types'
 import { getPegawai, getSkpdList, getStatDashboard } from '@/actions/pegawai'
 import { getSession } from '@/actions/auth'
@@ -22,6 +22,8 @@ export default function DashboardPage() {
   const [role, setRole] = useState<Role>('operator')
   const [operatorSession, setOperatorSession] = useState<SessionData | null>(null)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const [skpdFilter, setSkpdFilter] = useState('')
   const [jenisFilter, setJenisFilter] = useState<'' | 'PNS' | 'P3K'>('')
   const [page, setPage] = useState(1)
@@ -33,7 +35,7 @@ export default function DashboardPage() {
   const loadData = useCallback(() => {
     startTransition(async () => {
       const [pegawaiResult, skpd, stat, session] = await Promise.all([
-        getPegawai({ skpdId: skpdFilter || undefined, search: search || undefined, jenisPegawai: jenisFilter || undefined, page, pageSize: PAGE_SIZE }),
+        getPegawai({ skpdId: skpdFilter || undefined, search: debouncedSearch || undefined, jenisPegawai: jenisFilter || undefined, page, pageSize: PAGE_SIZE }),
         getSkpdList(),
         getStatDashboard({ jenisPegawai: jenisFilter || undefined }),
         getSession(),
@@ -44,7 +46,16 @@ export default function DashboardPage() {
       setStats(stat)
       if (session) { setRole(session.role); setOperatorSession(session) }
     })
-  }, [search, skpdFilter, jenisFilter, page])
+  }, [debouncedSearch, skpdFilter, jenisFilter, page])
+
+  useEffect(() => {
+    clearTimeout(searchTimer.current)
+    searchTimer.current = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1)
+    }, 300)
+    return () => clearTimeout(searchTimer.current)
+  }, [search])
 
   useEffect(() => { loadData() }, [loadData])
 
@@ -92,7 +103,7 @@ export default function DashboardPage() {
           <Input
             placeholder="Cari NIP atau Nama..."
             value={search}
-            onChange={(e) => { setSearch(e.target.value); setPage(1) }}
+            onChange={(e) => setSearch(e.target.value)}
             className="pl-9 bg-slate-800/50 border-slate-700 text-slate-100 placeholder:text-slate-500"
           />
         </div>

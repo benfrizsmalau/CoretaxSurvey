@@ -9,36 +9,18 @@ import { getPegawaiDataIssues } from '@/lib/data-quality'
 export async function getStatDashboard(opts?: { jenisPegawai?: string }): Promise<StatDashboard> {
   const supabase = getSupabaseClient()
   const session = await getSession()
-  const jp = opts?.jenisPegawai
   const operatorSkpdIds =
     session?.role === 'operator' && session.skpd_ids && session.skpd_ids.length > 0
       ? session.skpd_ids
       : null
 
-  function base() {
-    let q = supabase.from('pegawai_coretax').select('*', { count: 'exact', head: true })
-    if (jp) q = q.eq('jenis_pegawai', jp)
-    if (operatorSkpdIds) q = q.in('skpd_id', operatorSkpdIds)
-    return q
-  }
+  const { data } = await supabase.rpc('get_stat_dashboard', {
+    p_jenis_pegawai: opts?.jenisPegawai ?? null,
+    p_skpd_ids: operatorSkpdIds ?? null,
+  })
 
-  const [total, validasiSukses, sedangProses, belumTerdaftar, pnsCount, p3kCount] = await Promise.all([
-    base(),
-    base().eq('status_aktivasi', 'Validasi Sukses'),
-    base().in('status_aktivasi', ['Aktivasi Akun', 'Pembuatan KO DJP']),
-    base().eq('status_aktivasi', 'Belum Terdaftar'),
-    base().eq('jenis_pegawai', 'PNS'),
-    base().eq('jenis_pegawai', 'P3K'),
-  ])
-
-  return {
-    total: total.count ?? 0,
-    validasi_sukses: validasiSukses.count ?? 0,
-    sedang_proses: sedangProses.count ?? 0,
-    belum_terdaftar: belumTerdaftar.count ?? 0,
-    pns_total: pnsCount.count ?? 0,
-    p3k_total: p3kCount.count ?? 0,
-  }
+  const result = data as StatDashboard | null
+  return result ?? { total: 0, validasi_sukses: 0, sedang_proses: 0, belum_terdaftar: 0, pns_total: 0, p3k_total: 0 }
 }
 
 export async function getSkpdList(): Promise<RefSKPD[]> {
