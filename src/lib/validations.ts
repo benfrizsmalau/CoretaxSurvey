@@ -4,7 +4,7 @@ export const pegawaiUpdateSchema = z.object({
   nik_pegawai: z
     .string()
     .trim()
-    .max(32, 'NIK terlalu panjang')
+    .regex(/^\d{16}$/, 'NIK KTP harus 16 digit angka')
     .optional()
     .or(z.literal('')),
   no_kk: z

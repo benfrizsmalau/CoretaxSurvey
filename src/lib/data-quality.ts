@@ -1,5 +1,6 @@
 export interface PegawaiQualityInput {
   nik_pegawai?: string | null
+  no_kk?: string | null
   npwp_pegawai?: string | null
   no_telp?: string | null
   email?: string | null
@@ -41,15 +42,23 @@ export function getNpwpState(value: string | null | undefined) {
 export function getPegawaiDataIssues(input: PegawaiQualityInput) {
   const issues: string[] = []
   const nik = input.nik_pegawai?.trim() ?? ''
+  const noKk = input.no_kk?.trim() ?? ''
   const npwp = input.npwp_pegawai?.trim() ?? ''
   const phone = input.no_telp?.trim() ?? ''
   const email = input.email?.trim() ?? ''
 
   if (!nik) {
-    issues.push('NIK belum diisi')
+    issues.push('NIK KTP belum diisi')
   } else {
     const digits = countDigits(nik)
-    if (digits !== 16) issues.push(`NIK belum 16 digit (${digits} digit)`)
+    if (digits !== 16) issues.push(`NIK KTP belum 16 digit (${digits} digit)`)
+  }
+
+  if (!noKk) {
+    issues.push('No. Kartu Keluarga belum diisi')
+  } else {
+    const digits = countDigits(noKk)
+    if (digits !== 16) issues.push(`No. KK belum 16 digit (${digits} digit)`)
   }
 
   if (!npwp) {
