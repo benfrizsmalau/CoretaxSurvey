@@ -42,12 +42,14 @@ export interface AccessPin {
   is_active: boolean
   created_at: string
   last_used_at: string | null
+  skpd_ids?: string[]
 }
 
 export interface SessionData {
   role: Role
   pin_label?: string
   logged_in_at: number
+  skpd_ids?: string[]
 }
 
 export interface StatDashboard {

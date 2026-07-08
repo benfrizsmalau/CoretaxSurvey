@@ -8,11 +8,17 @@ import { getPegawaiDataIssues } from '@/lib/data-quality'
 
 export async function getStatDashboard(opts?: { jenisPegawai?: string }): Promise<StatDashboard> {
   const supabase = getSupabaseClient()
+  const session = await getSession()
   const jp = opts?.jenisPegawai
+  const operatorSkpdIds =
+    session?.role === 'operator' && session.skpd_ids && session.skpd_ids.length > 0
+      ? session.skpd_ids
+      : null
 
   function base() {
     let q = supabase.from('pegawai_coretax').select('*', { count: 'exact', head: true })
     if (jp) q = q.eq('jenis_pegawai', jp)
+    if (operatorSkpdIds) q = q.in('skpd_id', operatorSkpdIds)
     return q
   }
 
@@ -21,8 +27,8 @@ export async function getStatDashboard(opts?: { jenisPegawai?: string }): Promis
     base().eq('status_aktivasi', 'Validasi Sukses'),
     base().in('status_aktivasi', ['Aktivasi Akun', 'Pembuatan KO DJP']),
     base().eq('status_aktivasi', 'Belum Terdaftar'),
-    supabase.from('pegawai_coretax').select('*', { count: 'exact', head: true }).eq('jenis_pegawai', 'PNS'),
-    supabase.from('pegawai_coretax').select('*', { count: 'exact', head: true }).eq('jenis_pegawai', 'P3K'),
+    base().eq('jenis_pegawai', 'PNS'),
+    base().eq('jenis_pegawai', 'P3K'),
   ])
 
   return {
@@ -37,8 +43,13 @@ export async function getStatDashboard(opts?: { jenisPegawai?: string }): Promis
 
 export async function getSkpdList(): Promise<RefSKPD[]> {
   const supabase = getSupabaseClient()
+  const session = await getSession()
   const { data } = await supabase.from('ref_skpd').select('id, nama_skpd').order('nama_skpd')
-  return data ?? []
+  const all = data ?? []
+  if (session?.role === 'operator' && session.skpd_ids && session.skpd_ids.length > 0) {
+    return all.filter((s) => session.skpd_ids!.includes(s.id))
+  }
+  return all
 }
 
 export async function getPegawai(opts: {
@@ -49,9 +60,15 @@ export async function getPegawai(opts: {
   pageSize?: number
 }) {
   const supabase = getSupabaseClient()
+  const session = await getSession()
   const { skpdId, search, jenisPegawai, page = 1, pageSize = 50 } = opts
   const from = (page - 1) * pageSize
   const to = from + pageSize - 1
+
+  const operatorSkpdIds =
+    session?.role === 'operator' && session.skpd_ids && session.skpd_ids.length > 0
+      ? session.skpd_ids
+      : null
 
   let query = supabase
     .from('pegawai_coretax')
@@ -59,7 +76,12 @@ export async function getPegawai(opts: {
     .order('nama_pegawai', { ascending: true })
     .range(from, to)
 
-  if (skpdId) query = query.eq('skpd_id', skpdId)
+  if (operatorSkpdIds) {
+    query = query.in('skpd_id', operatorSkpdIds)
+    if (skpdId && operatorSkpdIds.includes(skpdId)) query = query.eq('skpd_id', skpdId)
+  } else if (skpdId) {
+    query = query.eq('skpd_id', skpdId)
+  }
   if (jenisPegawai) query = query.eq('jenis_pegawai', jenisPegawai)
   if (search)
     query = query.or(`nip_pegawai.ilike.%${search}%,nama_pegawai.ilike.%${search}%`)

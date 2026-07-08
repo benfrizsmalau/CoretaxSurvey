@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useTransition, useCallback } from 'react'
-import { PegawaiCoretax, RefSKPD, Role } from '@/lib/types'
+import { PegawaiCoretax, RefSKPD, Role, SessionData } from '@/lib/types'
 import { getPegawai, getSkpdList, getStatDashboard } from '@/actions/pegawai'
 import { getSession } from '@/actions/auth'
 import { StatCards } from '@/components/dashboard/StatCards'
@@ -11,7 +11,7 @@ import { AddPegawaiDialog } from '@/components/dashboard/AddPegawaiDialog'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
-import { Search, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Plus, Building2 } from 'lucide-react'
 
 const PAGE_SIZE = 50
 
@@ -20,6 +20,7 @@ export default function DashboardPage() {
   const [skpdList, setSkpdList] = useState<RefSKPD[]>([])
   const [stats, setStats] = useState({ total: 0, validasi_sukses: 0, sedang_proses: 0, belum_terdaftar: 0, pns_total: 0, p3k_total: 0 })
   const [role, setRole] = useState<Role>('operator')
+  const [operatorSession, setOperatorSession] = useState<SessionData | null>(null)
   const [search, setSearch] = useState('')
   const [skpdFilter, setSkpdFilter] = useState('')
   const [jenisFilter, setJenisFilter] = useState<'' | 'PNS' | 'P3K'>('')
@@ -41,7 +42,7 @@ export default function DashboardPage() {
       setTotalCount(pegawaiResult.count)
       setSkpdList(skpd)
       setStats(stat)
-      if (session) setRole(session.role)
+      if (session) { setRole(session.role); setOperatorSession(session) }
     })
   }, [search, skpdFilter, jenisFilter, page])
 
@@ -54,6 +55,16 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <StatCards stats={stats} />
+
+      {role === 'operator' && operatorSession?.skpd_ids && operatorSession.skpd_ids.length > 0 && skpdList.length > 0 && (
+        <div className="flex items-start gap-2.5 rounded-lg border border-indigo-500/20 bg-indigo-500/10 px-3.5 py-2.5 text-sm text-indigo-300">
+          <Building2 className="w-4 h-4 mt-0.5 shrink-0 text-indigo-400" />
+          <div>
+            <span className="font-medium">Tanggung jawab Anda:</span>
+            <span className="ml-2 text-indigo-200/80">{skpdList.map((s) => s.nama_skpd).join(' · ')}</span>
+          </div>
+        </div>
+      )}
 
       <div className="flex gap-1.5 p-1 bg-slate-800/60 rounded-lg border border-slate-700/50 w-fit">
         {([['', 'Semua'], ['PNS', 'PNS'], ['P3K', 'P3K']] as const).map(([val, label]) => (
