@@ -7,6 +7,12 @@ export const pegawaiUpdateSchema = z.object({
     .max(32, 'NIK terlalu panjang')
     .optional()
     .or(z.literal('')),
+  no_kk: z
+    .string()
+    .trim()
+    .regex(/^\d{16}$/, 'No. KK harus 16 digit angka')
+    .optional()
+    .or(z.literal('')),
   npwp_pegawai: z
     .string()
     .trim()

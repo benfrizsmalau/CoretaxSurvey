@@ -28,6 +28,7 @@ interface Props {
 export function EditDialog({ pegawai, role, onClose, onSaved }: Props) {
   const [form, setForm] = useState({
     nik_pegawai: pegawai.nik_pegawai ?? '',
+    no_kk: pegawai.no_kk ?? '',
     npwp_pegawai: pegawai.npwp_pegawai ?? '',
     no_telp: pegawai.no_telp ?? '',
     email: pegawai.email ?? '',
@@ -89,7 +90,8 @@ export function EditDialog({ pegawai, role, onClose, onSaved }: Props) {
 
         <div className="grid gap-4 py-2">
           {[
-            { key: 'nik_pegawai', label: 'NIK (16 digit)', placeholder: '3200...' },
+            { key: 'nik_pegawai', label: 'NIK KTP (16 digit)', placeholder: '3200...' },
+            { key: 'no_kk', label: 'No. Kartu Keluarga (16 digit)', placeholder: '3200...' },
             { key: 'npwp_pegawai', label: 'NPWP (16 digit)', placeholder: '16 digit angka' },
             { key: 'no_telp', label: 'No. Telepon', placeholder: '0812...' },
             { key: 'email', label: 'Email', placeholder: 'nama@domain.com' },
