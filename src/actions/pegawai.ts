@@ -46,6 +46,7 @@ export async function getAllPegawai(): Promise<PegawaiCoretax[]> {
     .from('pegawai_coretax')
     .select('*, ref_skpd(nama_skpd)')
     .order('nama_pegawai', { ascending: true })
+    .range(0, 9999)
 
   if (operatorSkpdIds) query = query.in('skpd_id', operatorSkpdIds)
 
