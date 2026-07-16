@@ -52,7 +52,7 @@ export default function DaftarPage() {
             <SelectTrigger className="border-slate-700 bg-slate-800 text-slate-300">
               <SelectValue placeholder="Pilih SKPD" />
             </SelectTrigger>
-            <SelectContent className="max-h-64 border-slate-700 bg-slate-800">
+            <SelectContent className="max-h-64 w-[min(44rem,calc(100vw-2rem))] border-slate-700 bg-slate-800">
               {skpdList.map((skpd) => (
                 <SelectItem key={skpd.id} value={skpd.id} className="text-slate-300">
                   {skpd.nama_skpd}
