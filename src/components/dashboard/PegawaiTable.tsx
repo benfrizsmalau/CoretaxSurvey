@@ -64,29 +64,36 @@ export function PegawaiTable({ pegawai, skpdList, role, onSelectionChange, onDat
   return (
     <>
       <div className="overflow-hidden rounded-xl border border-slate-800">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1600px] table-fixed text-sm">
+        <div className="overflow-x-auto cursor-grab active:cursor-grabbing select-none" onMouseDown={(e) => {
+          const el = e.currentTarget
+          const startX = e.pageX - el.scrollLeft
+          const onMove = (ev: MouseEvent) => { el.scrollLeft = ev.pageX - startX }
+          const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp) }
+          document.addEventListener('mousemove', onMove)
+          document.addEventListener('mouseup', onUp)
+        }}>
+          <table className="w-full min-w-[2600px] table-fixed text-sm">
             <thead>
               <tr className="border-b border-slate-800 bg-slate-900/60">
-                <th className="w-[2%] p-3 text-left">
+                <th className="w-10 p-3 text-left">
                   <Checkbox
                     checked={selected.size === pegawai.length && pegawai.length > 0}
                     onCheckedChange={toggleAll}
                     className="border-slate-600"
                   />
                 </th>
-                <th className="w-[9%] p-3 text-left font-medium text-slate-400">NIP</th>
-                <th className="w-[13%] p-3 text-left font-medium text-slate-400">Nama</th>
-                <th className="w-[12%] p-3 text-left font-medium text-slate-400">SKPD</th>
-                <th className="w-[8%] p-3 text-left font-medium text-slate-400">NIK KTP</th>
-                <th className="w-[8%] p-3 text-left font-medium text-slate-400">No. KK</th>
-                <th className="w-[10%] p-3 text-left font-medium text-slate-400">Nama Ibu Kandung</th>
-                <th className="w-[10%] p-3 text-left font-medium text-slate-400">NPWP</th>
-                <th className="w-[7%] p-3 text-left font-medium text-slate-400">Telepon</th>
-                <th className="w-[11%] p-3 text-left font-medium text-slate-400">Email</th>
-                <th className="w-[4%] p-3 text-left font-medium text-slate-400">Jenis</th>
-                <th className="w-[4%] p-3 text-left font-medium text-slate-400">Status</th>
-                <th className="w-[2%] p-3 text-right font-medium text-slate-400">Aksi</th>
+                <th className="w-[190px] p-3 text-left font-medium text-slate-400">NIP</th>
+                <th className="w-[280px] p-3 text-left font-medium text-slate-400">Nama</th>
+                <th className="w-[280px] p-3 text-left font-medium text-slate-400">SKPD</th>
+                <th className="w-[175px] p-3 text-left font-medium text-slate-400">NIK KTP</th>
+                <th className="w-[175px] p-3 text-left font-medium text-slate-400">No. KK</th>
+                <th className="w-[220px] p-3 text-left font-medium text-slate-400">Nama Ibu Kandung</th>
+                <th className="w-[220px] p-3 text-left font-medium text-slate-400">NPWP</th>
+                <th className="w-[160px] p-3 text-left font-medium text-slate-400">Telepon</th>
+                <th className="w-[250px] p-3 text-left font-medium text-slate-400">Email</th>
+                <th className="w-[90px] p-3 text-left font-medium text-slate-400">Jenis</th>
+                <th className="w-[170px] p-3 text-left font-medium text-slate-400">Status</th>
+                <th className="w-16 p-3 text-right font-medium text-slate-400">Aksi</th>
               </tr>
             </thead>
             <tbody>
