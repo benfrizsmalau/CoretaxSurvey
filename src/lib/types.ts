@@ -19,6 +19,7 @@ export interface PegawaiCoretax {
   nama_pegawai: string
   nik_pegawai: string | null
   no_kk: string | null
+  nama_ibu_kandung: string | null
   npwp_pegawai: string | null
   skpd_id: string | null
   skpd_raw: string | null

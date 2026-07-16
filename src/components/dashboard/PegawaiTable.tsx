@@ -65,7 +65,7 @@ export function PegawaiTable({ pegawai, skpdList, role, onSelectionChange, onDat
     <>
       <div className="overflow-hidden rounded-xl border border-slate-800">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[1960px] table-fixed text-sm">
+          <table className="w-full min-w-[2160px] table-fixed text-sm">
             <thead>
               <tr className="border-b border-slate-800 bg-slate-900/60">
                 <th className="w-10 p-3 text-left">
@@ -80,6 +80,7 @@ export function PegawaiTable({ pegawai, skpdList, role, onSelectionChange, onDat
                 <th className="w-[240px] p-3 text-left font-medium text-slate-400">SKPD</th>
                 <th className="w-[160px] p-3 text-left font-medium text-slate-400">NIK KTP</th>
                 <th className="w-[160px] p-3 text-left font-medium text-slate-400">No. KK</th>
+                <th className="w-[200px] p-3 text-left font-medium text-slate-400">Nama Ibu Kandung</th>
                 <th className="w-[220px] p-3 text-left font-medium text-slate-400">NPWP</th>
                 <th className="w-[145px] p-3 text-left font-medium text-slate-400">Telepon</th>
                 <th className="w-[230px] p-3 text-left font-medium text-slate-400">Email</th>
@@ -91,7 +92,7 @@ export function PegawaiTable({ pegawai, skpdList, role, onSelectionChange, onDat
             <tbody>
               {pegawai.length === 0 && (
                 <tr>
-                  <td colSpan={12} className="p-8 text-center text-slate-500">Tidak ada data</td>
+                  <td colSpan={13} className="p-8 text-center text-slate-500">Tidak ada data</td>
                 </tr>
               )}
               {pegawai.map((p) => {
@@ -129,6 +130,11 @@ export function PegawaiTable({ pegawai, skpdList, role, onSelectionChange, onDat
                     <td className="p-3 font-mono text-xs">
                       <span className={p.no_kk ? 'text-slate-300' : 'text-amber-300/80'}>
                         {p.no_kk || 'Belum diisi'}
+                      </span>
+                    </td>
+                    <td className="p-3 text-xs text-slate-300">
+                      <span className={p.nama_ibu_kandung ? 'block truncate' : 'text-amber-300/80'} title={p.nama_ibu_kandung ?? 'Belum diisi'}>
+                        {p.nama_ibu_kandung || 'Belum diisi'}
                       </span>
                     </td>
                     <td className="p-3 font-mono text-xs">

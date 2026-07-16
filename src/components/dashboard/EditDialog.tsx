@@ -29,6 +29,7 @@ export function EditDialog({ pegawai, role, onClose, onSaved }: Props) {
   const [form, setForm] = useState({
     nik_pegawai: pegawai.nik_pegawai ?? '',
     no_kk: pegawai.no_kk ?? '',
+    nama_ibu_kandung: pegawai.nama_ibu_kandung ?? '',
     npwp_pegawai: pegawai.npwp_pegawai ?? '',
     no_telp: pegawai.no_telp ?? '',
     email: pegawai.email ?? '',
@@ -92,6 +93,7 @@ export function EditDialog({ pegawai, role, onClose, onSaved }: Props) {
           {[
             { key: 'nik_pegawai', label: 'NIK KTP (16 digit)', placeholder: '3200...' },
             { key: 'no_kk', label: 'No. Kartu Keluarga (16 digit)', placeholder: '3200...' },
+            { key: 'nama_ibu_kandung', label: 'Nama Ibu Kandung', placeholder: 'Nama ibu kandung' },
             { key: 'npwp_pegawai', label: 'NPWP (16 digit)', placeholder: '16 digit angka' },
             { key: 'no_telp', label: 'No. Telepon', placeholder: '0812...' },
             { key: 'email', label: 'Email', placeholder: 'nama@domain.com' },

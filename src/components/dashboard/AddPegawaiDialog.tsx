@@ -26,6 +26,7 @@ interface AddPegawaiForm {
   skpd_id: string
   nik_pegawai: string
   no_kk: string
+  nama_ibu_kandung: string
   npwp_pegawai: string
   no_telp: string
   email: string
@@ -39,6 +40,7 @@ const emptyForm: AddPegawaiForm = {
   skpd_id: '',
   nik_pegawai: '',
   no_kk: '',
+  nama_ibu_kandung: '',
   npwp_pegawai: '',
   no_telp: '',
   email: '',
@@ -153,6 +155,7 @@ export function AddPegawaiDialog({ open, skpdList, onClose, onCreated }: Props) 
             {[
               { key: 'nik_pegawai', label: 'NIK KTP (16 digit)', placeholder: '16 digit angka' },
               { key: 'no_kk', label: 'No. Kartu Keluarga (16 digit)', placeholder: '16 digit angka' },
+              { key: 'nama_ibu_kandung', label: 'Nama Ibu Kandung', placeholder: 'Nama ibu kandung' },
               { key: 'npwp_pegawai', label: 'NPWP (16 digit)', placeholder: '16 digit angka' },
               { key: 'no_telp', label: 'No. Telepon', placeholder: '0812...' },
               { key: 'email', label: 'Email', placeholder: 'nama@domain.com' },

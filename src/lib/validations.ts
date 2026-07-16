@@ -13,6 +13,12 @@ export const pegawaiUpdateSchema = z.object({
     .regex(/^\d{16}$/, 'No. KK harus 16 digit angka')
     .optional()
     .or(z.literal('')),
+  nama_ibu_kandung: z
+    .string()
+    .trim()
+    .max(255, 'Nama ibu kandung terlalu panjang')
+    .optional()
+    .or(z.literal('')),
   npwp_pegawai: z
     .string()
     .trim()
