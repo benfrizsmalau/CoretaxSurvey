@@ -11,7 +11,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <div className="min-h-screen" style={{ background: 'rgb(15 23 42)' }}>
       <header className="glass-card border-b border-slate-800 sticky top-0 z-40">
-        <div className="mx-auto flex h-14 w-full max-w-[1800px] items-center justify-between px-4 lg:px-8">
+        <div className="mx-auto flex h-14 w-full max-w-[2560px] items-center justify-between px-4 lg:px-8">
           <div className="flex items-center gap-3">
             <Link href="/dashboard" className="text-sm font-semibold text-slate-100">
               Coretax Mamberamo Raya
@@ -39,7 +39,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-[1800px] px-4 py-6 lg:px-8">{children}</main>
+      <main className="mx-auto w-full max-w-[2560px] px-4 py-6 lg:px-8">{children}</main>
     </div>
   )
 }
