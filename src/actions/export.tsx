@@ -94,17 +94,30 @@ export async function generateDaftarPdf(
   const filterLabel = filterStatus && filterStatus !== 'semua' ? ` · Status: ${filterStatus}` : ''
 
   // F4 Landscape: 330mm × 215mm → 935pt × 609pt
+  const BDR = '#888'   // border warna kolom
+  const BDR_OUTER = '#333'  // border tepi luar
+
   const styles = StyleSheet.create({
-    page: { padding: 28, fontSize: 7, fontFamily: 'Helvetica' },
-    header: { textAlign: 'center', marginBottom: 10 },
+    page: { padding: 28, paddingBottom: 36, fontSize: 7, fontFamily: 'Helvetica' },
+    pageNum: { position: 'absolute', bottom: 14, left: 28, right: 28, textAlign: 'center', fontSize: 6.5, color: '#888' },
+    header: { textAlign: 'center', marginBottom: 8 },
     title: { fontSize: 10, fontWeight: 'bold', marginBottom: 2 },
-    subtitle: { fontSize: 8, color: '#555', marginBottom: 10 },
-    table: { borderWidth: 1, borderColor: '#000' },
-    thead: { flexDirection: 'row', backgroundColor: '#e0e0e0', borderBottomWidth: 1, borderColor: '#000' },
-    row: { flexDirection: 'row', borderBottomWidth: 0.5, borderColor: '#ccc' },
-    cell: { padding: '3 4', borderRightWidth: 0.5, borderColor: '#bbb' },
-    bold: { fontWeight: 'bold' },
-    footer: { marginTop: 18, flexDirection: 'row', justifyContent: 'flex-end' },
+    subtitle: { fontSize: 7.5, color: '#555', marginBottom: 8 },
+    // thead: border tepi atas + kiri, borderBottom tebal — TANPA outer table box
+    thead: {
+      flexDirection: 'row', backgroundColor: '#d4d4d4',
+      borderTopWidth: 1, borderTopColor: BDR_OUTER,
+      borderLeftWidth: 1, borderLeftColor: BDR_OUTER,
+      borderBottomWidth: 1.5, borderBottomColor: BDR_OUTER,
+    },
+    thcell: { padding: '4 5', borderRightWidth: 0.5, borderRightColor: BDR, fontWeight: 'bold', fontSize: 7.5 },
+    thcellLast: { borderRightWidth: 1, borderRightColor: BDR_OUTER },
+    // Baris data — border kiri + bawah; kanan ditangani sel terakhir
+    row: { flexDirection: 'row', borderBottomWidth: 0.5, borderBottomColor: '#ddd', borderLeftWidth: 1, borderLeftColor: BDR_OUTER },
+    rowAlt: { backgroundColor: '#f4f6fa' },
+    cell: { padding: '3 5', borderRightWidth: 0.5, borderRightColor: '#ccc' },
+    cellLast: { borderRightWidth: 1, borderRightColor: BDR_OUTER },
+    footer: { marginTop: 20, flexDirection: 'row', justifyContent: 'flex-end' },
     signBlock: { width: 200, textAlign: 'center', fontSize: 8 },
   })
 
@@ -125,7 +138,7 @@ export async function generateDaftarPdf(
 
   const colsSemuaSkpd = [
     { label: 'No',               w: '2%'  },
-    { label: 'SKPD',             w: '13%' },
+    { label: 'SKPD',             w: '14%' },
     { label: 'Nama Pegawai',     w: '12%' },
     { label: 'NIP',              w: '10%' },
     { label: 'NIK KTP',          w: '9%'  },
@@ -134,8 +147,8 @@ export async function generateDaftarPdf(
     { label: 'NPWP',             w: '9%'  },
     { label: 'No. Telepon',      w: '6%'  },
     { label: 'Email',            w: '11%' },
-    { label: 'Jenis',            w: '4%'  },
-    { label: 'Status Aktivasi',  w: '5%'  },
+    { label: 'Jenis',            w: '3%'  },
+    { label: 'Status',           w: '5%'  },
   ]
 
   const cols = semuaSkpd ? colsSemuaSkpd : colsPerSkpd
@@ -150,20 +163,25 @@ export async function generateDaftarPdf(
     ref_skpd?: { nama_skpd: string } | null
   }
 
+  function trunc(s: string, max: number) {
+    return s.length > max ? s.slice(0, max - 1) + '…' : s
+  }
+
   function val(p: Row, label: string, i: number): string {
     switch (label) {
       case 'No':               return String(i + 1)
-      case 'SKPD':             return p.ref_skpd?.nama_skpd || '-'
-      case 'Nama Pegawai':     return p.nama_pegawai
+      case 'SKPD':             return trunc(p.ref_skpd?.nama_skpd || '-', 36)
+      case 'Nama Pegawai':     return trunc(p.nama_pegawai, 30)
       case 'NIP':              return p.nip_pegawai
       case 'NIK KTP':          return p.nik_pegawai || '-'
       case 'No. KK':           return p.no_kk || '-'
-      case 'Nama Ibu Kandung': return p.nama_ibu_kandung || '-'
+      case 'Nama Ibu Kandung': return trunc(p.nama_ibu_kandung || '-', 28)
       case 'NPWP':             return p.npwp_pegawai || '-'
       case 'No. Telepon':      return p.no_telp || '-'
-      case 'Email':            return p.email || '-'
+      case 'Email':            return trunc(p.email || '-', 30)
       case 'Jenis':            return p.jenis_pegawai
       case 'Status Aktivasi':  return p.status_aktivasi
+      case 'Status':           return p.status_aktivasi
       default:                 return '-'
     }
   }
@@ -174,9 +192,21 @@ export async function generateDaftarPdf(
     ? 'SELURUH SKPD PEMERINTAH KABUPATEN MAMBERAMO RAYA'
     : namaSkpd.toUpperCase()
 
+  const lastIdx = cols.length - 1
+
   const doc = (
     <Document>
       <Page size={[935, 609]} style={styles.page}>
+        {/* Nomor halaman — muncul di setiap halaman */}
+        <Text
+          style={styles.pageNum}
+          fixed
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          render={({ pageNumber, totalPages }: any) =>
+            `Halaman ${pageNumber} dari ${totalPages}`
+          }
+        />
+
         <View style={styles.header}>
           <Text style={styles.title}>DAFTAR PEGAWAI PENDATAAN CORETAX</Text>
           <Text style={styles.title}>{judulBaris2}</Text>
@@ -185,24 +215,25 @@ export async function generateDaftarPdf(
           </Text>
         </View>
 
-        <View style={styles.table}>
-          <View style={styles.thead} fixed>
-            {cols.map((c) => (
-              <View key={c.label} style={[styles.cell, { width: c.w }]}>
-                <Text style={styles.bold}>{c.label}</Text>
-              </View>
-            ))}
-          </View>
-          {rows.map((p, i) => (
-            <View key={`${p.nip_pegawai}-${i}`} style={styles.row} wrap={false}>
-              {cols.map((c) => (
-                <View key={c.label} style={[styles.cell, { width: c.w }]}>
-                  <Text>{val(p, c.label, i)}</Text>
-                </View>
-              ))}
+        {/* Header kolom — fixed agar muncul di setiap halaman */}
+        <View style={styles.thead} fixed>
+          {cols.map((c, idx) => (
+            <View key={c.label} style={idx === lastIdx ? [styles.thcell, styles.thcellLast, { width: c.w }] : [styles.thcell, { width: c.w }]}>
+              <Text>{c.label}</Text>
             </View>
           ))}
         </View>
+
+        {/* Baris data — wrap={false} agar baris tidak terputus antar halaman */}
+        {rows.map((p, i) => (
+          <View key={`${p.nip_pegawai}-${i}`} style={i % 2 === 1 ? [styles.row, styles.rowAlt] : styles.row} wrap={false}>
+            {cols.map((c, idx) => (
+              <View key={c.label} style={idx === lastIdx ? [styles.cell, styles.cellLast, { width: c.w }] : [styles.cell, { width: c.w }]}>
+                <Text>{val(p, c.label, i)}</Text>
+              </View>
+            ))}
+          </View>
+        ))}
 
         {!semuaSkpd && (
           <View style={styles.footer}>
