@@ -186,7 +186,7 @@ export async function generateDaftarPdf(
         </View>
 
         <View style={styles.table}>
-          <View style={styles.thead}>
+          <View style={styles.thead} fixed>
             {cols.map((c) => (
               <View key={c.label} style={[styles.cell, { width: c.w }]}>
                 <Text style={styles.bold}>{c.label}</Text>
