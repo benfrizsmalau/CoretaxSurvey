@@ -194,7 +194,7 @@ export async function generateDaftarPdf(
             ))}
           </View>
           {rows.map((p, i) => (
-            <View key={`${p.nip_pegawai}-${i}`} style={styles.row}>
+            <View key={`${p.nip_pegawai}-${i}`} style={styles.row} wrap={false}>
               {cols.map((c) => (
                 <View key={c.label} style={[styles.cell, { width: c.w }]}>
                   <Text>{val(p, c.label, i)}</Text>
