@@ -61,28 +61,37 @@ export async function exportRekapToExcel(): Promise<{ data: number[]; filename: 
 }
 
 export async function generateDaftarPdf(
-  skpdId: string,
+  skpdId: string | null,
   filterStatus?: string
 ): Promise<{ data: number[]; filename: string }> {
   const supabase = getSupabaseClient()
-  const { data: skpd } = await supabase.from('ref_skpd').select('nama_skpd').eq('id', skpdId).single()
+  const semuaSkpd = !skpdId
 
-  let query = supabase
+  let namaSkpd = 'SEMUA SKPD'
+  if (!semuaSkpd) {
+    const { data: skpd } = await supabase.from('ref_skpd').select('nama_skpd').eq('id', skpdId!).single()
+    namaSkpd = skpd?.nama_skpd ?? 'SKPD'
+  }
+
+  const selectCols = semuaSkpd
+    ? 'nip_pegawai, nama_pegawai, nik_pegawai, no_kk, nama_ibu_kandung, npwp_pegawai, no_telp, email, jenis_pegawai, status_aktivasi, ref_skpd(nama_skpd)'
+    : 'nip_pegawai, nama_pegawai, nik_pegawai, no_kk, nama_ibu_kandung, npwp_pegawai, no_telp, email, jenis_pegawai, status_aktivasi'
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query = (supabase as any)
     .from('pegawai_coretax')
-    .select('nip_pegawai, nama_pegawai, nik_pegawai, no_kk, nama_ibu_kandung, npwp_pegawai, no_telp, email, jenis_pegawai, status_aktivasi')
-    .eq('skpd_id', skpdId)
+    .select(selectCols)
     .order('nama_pegawai')
 
-  if (filterStatus && filterStatus !== 'semua') {
-    query = query.eq('status_aktivasi', filterStatus)
-  }
+  if (!semuaSkpd) query = query.eq('skpd_id', skpdId)
+  if (filterStatus && filterStatus !== 'semua') query = query.eq('status_aktivasi', filterStatus)
 
   const { data: pegawai } = await query
 
   const { renderToBuffer, Document, Page, Text, View, StyleSheet } = await import('@react-pdf/renderer')
 
-  const namaSkpd = skpd?.nama_skpd ?? 'SKPD'
   const tanggal = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+  const filterLabel = filterStatus && filterStatus !== 'semua' ? ` · Status: ${filterStatus}` : ''
 
   // F4 Landscape: 330mm × 215mm → 935pt × 609pt
   const styles = StyleSheet.create({
@@ -99,7 +108,8 @@ export async function generateDaftarPdf(
     signBlock: { width: 200, textAlign: 'center', fontSize: 8 },
   })
 
-  const cols = [
+  // Kolom berbeda: semua SKPD menambah kolom SKPD, redistribusi lebar
+  const colsPerSkpd = [
     { label: 'No',               w: '3%'  },
     { label: 'Nama Pegawai',     w: '14%' },
     { label: 'NIP',              w: '12%' },
@@ -113,17 +123,37 @@ export async function generateDaftarPdf(
     { label: 'Status Aktivasi',  w: '4%'  },
   ]
 
+  const colsSemuaSkpd = [
+    { label: 'No',               w: '2%'  },
+    { label: 'SKPD',             w: '13%' },
+    { label: 'Nama Pegawai',     w: '12%' },
+    { label: 'NIP',              w: '10%' },
+    { label: 'NIK KTP',          w: '9%'  },
+    { label: 'No. KK',           w: '9%'  },
+    { label: 'Nama Ibu Kandung', w: '10%' },
+    { label: 'NPWP',             w: '9%'  },
+    { label: 'No. Telepon',      w: '6%'  },
+    { label: 'Email',            w: '11%' },
+    { label: 'Jenis',            w: '4%'  },
+    { label: 'Status Aktivasi',  w: '5%'  },
+  ]
+
+  const cols = semuaSkpd ? colsSemuaSkpd : colsPerSkpd
+
   type Row = {
     nip_pegawai: string; nama_pegawai: string
     nik_pegawai: string | null; no_kk: string | null
     nama_ibu_kandung: string | null; npwp_pegawai: string | null
     no_telp: string | null; email: string | null
     jenis_pegawai: string; status_aktivasi: string
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ref_skpd?: { nama_skpd: string } | null
   }
 
   function val(p: Row, label: string, i: number): string {
     switch (label) {
       case 'No':               return String(i + 1)
+      case 'SKPD':             return p.ref_skpd?.nama_skpd || '-'
       case 'Nama Pegawai':     return p.nama_pegawai
       case 'NIP':              return p.nip_pegawai
       case 'NIK KTP':          return p.nik_pegawai || '-'
@@ -140,13 +170,19 @@ export async function generateDaftarPdf(
 
   const rows = (pegawai ?? []) as Row[]
 
+  const judulBaris2 = semuaSkpd
+    ? 'SELURUH SKPD PEMERINTAH KABUPATEN MAMBERAMO RAYA'
+    : namaSkpd.toUpperCase()
+
   const doc = (
     <Document>
       <Page size={[935, 609]} style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.title}>DAFTAR PEGAWAI PENDATAAN CORETAX</Text>
-          <Text style={styles.title}>{namaSkpd.toUpperCase()}</Text>
-          <Text style={styles.subtitle}>Pemerintah Kabupaten Mamberamo Raya · {tanggal}</Text>
+          <Text style={styles.title}>{judulBaris2}</Text>
+          <Text style={styles.subtitle}>
+            Pemerintah Kabupaten Mamberamo Raya · {tanggal}{filterLabel} · Total: {rows.length} pegawai
+          </Text>
         </View>
 
         <View style={styles.table}>
@@ -158,7 +194,7 @@ export async function generateDaftarPdf(
             ))}
           </View>
           {rows.map((p, i) => (
-            <View key={p.nip_pegawai} style={styles.row}>
+            <View key={`${p.nip_pegawai}-${i}`} style={styles.row}>
               {cols.map((c) => (
                 <View key={c.label} style={[styles.cell, { width: c.w }]}>
                   <Text>{val(p, c.label, i)}</Text>
@@ -168,20 +204,23 @@ export async function generateDaftarPdf(
           ))}
         </View>
 
-        <View style={styles.footer}>
-          <View style={styles.signBlock}>
-            <Text>Kasonaweja, {tanggal}</Text>
-            <Text>Kepala {namaSkpd}</Text>
-            <View style={{ height: 48 }} />
-            <Text>_______________________________</Text>
-            <Text>NIP.</Text>
+        {!semuaSkpd && (
+          <View style={styles.footer}>
+            <View style={styles.signBlock}>
+              <Text>Kasonaweja, {tanggal}</Text>
+              <Text>Kepala {namaSkpd}</Text>
+              <View style={{ height: 48 }} />
+              <Text>_______________________________</Text>
+              <Text>NIP.</Text>
+            </View>
           </View>
-        </View>
+        )}
       </Page>
     </Document>
   )
 
   const buffer = await renderToBuffer(doc)
-  const filename = `daftar-${namaSkpd.replace(/\s+/g, '-').toLowerCase()}-${tanggal.replace(/\s/g, '-')}.pdf`
+  const slugSkpd = semuaSkpd ? 'semua-skpd' : namaSkpd.replace(/\s+/g, '-').toLowerCase()
+  const filename = `daftar-${slugSkpd}-${tanggal.replace(/\s/g, '-')}.pdf`
   return { data: Array.from(buffer), filename }
 }
