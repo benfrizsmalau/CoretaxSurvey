@@ -25,6 +25,7 @@ export interface PegawaiCoretax {
   skpd_raw: string | null
   no_telp: string | null
   email: string | null
+  password_coretax: string | null
   status_aktivasi: StatusAktivasi
   jenis_pegawai: JenisPegawai
   is_final: boolean

@@ -36,7 +36,7 @@ export async function getSkpdList(): Promise<RefSKPD[]> {
 
 // Kolom yang diperlukan dashboard — tidak pakai * agar payload lebih kecil
 const PEGAWAI_COLS =
-  'id, nip_pegawai, nama_pegawai, nik_pegawai, no_kk, nama_ibu_kandung, npwp_pegawai, skpd_id, no_telp, email, status_aktivasi, jenis_pegawai, is_final, updated_at, ref_skpd(nama_skpd)'
+  'id, nip_pegawai, nama_pegawai, nik_pegawai, no_kk, nama_ibu_kandung, npwp_pegawai, skpd_id, no_telp, email, password_coretax, status_aktivasi, jenis_pegawai, is_final, updated_at, ref_skpd(nama_skpd)'
 
 export async function getAllPegawai(): Promise<PegawaiCoretax[]> {
   const supabase = getSupabaseClient()

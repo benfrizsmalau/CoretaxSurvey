@@ -32,6 +32,7 @@ export const pegawaiUpdateSchema = z.object({
     .optional()
     .or(z.literal('')),
   email: z.string().trim().max(120, 'Email terlalu panjang').optional().or(z.literal('')),
+  password_coretax: z.string().trim().max(255, 'Password terlalu panjang').optional().or(z.literal('')),
   status_aktivasi: z.enum([
     'Belum Terdaftar',
     'Aktivasi Akun',

@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { AlertTriangle, Lock } from 'lucide-react'
+import { AlertTriangle, Lock, Eye, EyeOff } from 'lucide-react'
 import { getPegawaiDataIssues } from '@/lib/data-quality'
 
 interface Props {
@@ -33,9 +33,11 @@ export function EditDialog({ pegawai, role, onClose, onSaved }: Props) {
     npwp_pegawai: pegawai.npwp_pegawai ?? '',
     no_telp: pegawai.no_telp ?? '',
     email: pegawai.email ?? '',
+    password_coretax: pegawai.password_coretax ?? '',
     status_aktivasi: pegawai.status_aktivasi,
     jenis_pegawai: pegawai.jenis_pegawai,
   })
+  const [showPassword, setShowPassword] = useState(false)
   const [lastUpdatedAt, setLastUpdatedAt] = useState(pegawai.updated_at)
   const [error, setError] = useState('')
   const [savedMessage, setSavedMessage] = useState('')
@@ -108,6 +110,26 @@ export function EditDialog({ pegawai, role, onClose, onSaved }: Props) {
               />
             </div>
           ))}
+
+          <div className="grid grid-cols-3 gap-3 items-center">
+            <Label className="text-slate-300 text-right text-sm">Password Coretax</Label>
+            <div className="col-span-2 relative">
+              <Input
+                value={form.password_coretax}
+                onChange={(e) => field('password_coretax', e.target.value)}
+                placeholder="Password akun Coretax"
+                type={showPassword ? 'text' : 'password'}
+                className="bg-slate-800 border-slate-700 text-slate-100 placeholder:text-slate-600 text-sm pr-9"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
 
           <div className="grid grid-cols-3 gap-3 items-center">
             <Label className="text-slate-300 text-right text-sm">Status Aktivasi</Label>
