@@ -60,6 +60,62 @@ export async function exportRekapToExcel(): Promise<{ data: number[]; filename: 
   }
 }
 
+export async function generateDaftarExcel(
+  skpdId: string | null,
+  filterStatus?: string
+): Promise<{ data: number[]; filename: string }> {
+  const supabase = getSupabaseClient()
+  const semuaSkpd = !skpdId
+
+  let namaSkpd = 'SEMUA SKPD'
+  if (!semuaSkpd) {
+    const { data: skpd } = await supabase.from('ref_skpd').select('nama_skpd').eq('id', skpdId!).single()
+    namaSkpd = skpd?.nama_skpd ?? 'SKPD'
+  }
+
+  const selectCols = semuaSkpd
+    ? 'nip_pegawai, nama_pegawai, nik_pegawai, no_kk, nama_ibu_kandung, npwp_pegawai, no_telp, email, jenis_pegawai, status_aktivasi, is_final, ref_skpd(nama_skpd)'
+    : 'nip_pegawai, nama_pegawai, nik_pegawai, no_kk, nama_ibu_kandung, npwp_pegawai, no_telp, email, jenis_pegawai, status_aktivasi, is_final'
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query = (supabase as any)
+    .from('pegawai_coretax')
+    .select(selectCols)
+    .order('nama_pegawai')
+
+  if (!semuaSkpd) query = query.eq('skpd_id', skpdId)
+  if (filterStatus && filterStatus !== 'semua') query = query.eq('status_aktivasi', filterStatus)
+
+  const { data: pegawai } = await query
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rows = ((pegawai ?? []) as any[]).map((p) => ({
+    ...(semuaSkpd ? { SKPD: p.ref_skpd?.nama_skpd ?? '' } : {}),
+    NIP: p.nip_pegawai,
+    Nama: p.nama_pegawai,
+    NIK: p.nik_pegawai ?? '',
+    'No. KK': p.no_kk ?? '',
+    'Nama Ibu Kandung': p.nama_ibu_kandung ?? '',
+    NPWP: p.npwp_pegawai ?? '',
+    Telepon: p.no_telp ?? '',
+    Email: p.email ?? '',
+    Jenis: p.jenis_pegawai,
+    'Status Aktivasi': p.status_aktivasi,
+    'Status Data': p.is_final ? 'Terkunci' : 'Draft',
+  }))
+
+  const ws = XLSX.utils.json_to_sheet(rows)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, semuaSkpd ? 'Semua SKPD' : namaSkpd.slice(0, 31))
+  const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer
+  const tanggal = new Date().toISOString().slice(0, 10)
+  const slugSkpd = semuaSkpd ? 'semua-skpd' : namaSkpd.replace(/\s+/g, '-').toLowerCase()
+  return {
+    data: Array.from(buffer),
+    filename: `daftar-${slugSkpd}-${tanggal}.xlsx`,
+  }
+}
+
 export async function generateDaftarPdf(
   skpdId: string | null,
   filterStatus?: string

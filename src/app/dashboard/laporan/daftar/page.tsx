@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
-import { generateDaftarPdf } from '@/actions/export'
+import { generateDaftarPdf, generateDaftarExcel } from '@/actions/export'
 import { getSkpdList } from '@/actions/pegawai'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { RefSKPD } from '@/lib/types'
-import { FileText } from 'lucide-react'
+import { FileText, FileSpreadsheet } from 'lucide-react'
 
 const statusOptions = ['Belum Terdaftar', 'Aktivasi Akun', 'Pembuatan KO DJP', 'Validasi Sukses']
 const SEMUA_SKPD = '__semua__'
@@ -22,11 +22,18 @@ export default function DaftarPage() {
     getSkpdList().then(setSkpdList)
   }, [])
 
-  function handleGenerate() {
+  function handleGenerate(format: 'pdf' | 'excel') {
     const targetSkpdId = skpdId === SEMUA_SKPD ? null : skpdId
     startTransition(async () => {
-      const { data, filename } = await generateDaftarPdf(targetSkpdId, filterStatus)
-      const blob = new Blob([new Uint8Array(data)], { type: 'application/pdf' })
+      const { data, filename } =
+        format === 'pdf'
+          ? await generateDaftarPdf(targetSkpdId, filterStatus)
+          : await generateDaftarExcel(targetSkpdId, filterStatus)
+      const mimeType =
+        format === 'pdf'
+          ? 'application/pdf'
+          : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      const blob = new Blob([new Uint8Array(data)], { type: mimeType })
       const url = URL.createObjectURL(blob)
       const anchor = document.createElement('a')
       anchor.href = url
@@ -92,14 +99,25 @@ export default function DaftarPage() {
           </Select>
         </div>
 
-        <Button
-          onClick={handleGenerate}
-          disabled={isPending}
-          className="w-full gap-2 bg-indigo-600 text-white hover:bg-indigo-500"
-        >
-          <FileText className="h-4 w-4" />
-          {isPending ? 'Membuat PDF...' : 'Buat PDF'}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={() => handleGenerate('pdf')}
+            disabled={isPending}
+            className="w-full gap-2 bg-indigo-600 text-white hover:bg-indigo-500"
+          >
+            <FileText className="h-4 w-4" />
+            {isPending ? 'Memproses...' : 'Buat PDF'}
+          </Button>
+          <Button
+            onClick={() => handleGenerate('excel')}
+            disabled={isPending}
+            variant="outline"
+            className="w-full gap-2 border-slate-700 text-slate-300"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            {isPending ? 'Memproses...' : 'Buat Excel'}
+          </Button>
+        </div>
       </div>
     </div>
   )
