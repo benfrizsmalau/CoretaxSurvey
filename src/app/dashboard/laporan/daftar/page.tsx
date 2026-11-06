@@ -99,11 +99,11 @@ export default function DaftarPage() {
           </Select>
         </div>
 
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Button
             onClick={() => handleGenerate('pdf')}
             disabled={isPending}
-            className="w-full gap-2 bg-indigo-600 text-white hover:bg-indigo-500"
+            className="gap-2 bg-indigo-600 text-white hover:bg-indigo-500"
           >
             <FileText className="h-4 w-4" />
             {isPending ? 'Memproses...' : 'Buat PDF'}
@@ -112,7 +112,7 @@ export default function DaftarPage() {
             onClick={() => handleGenerate('excel')}
             disabled={isPending}
             variant="outline"
-            className="w-full gap-2 border-slate-700 text-slate-300"
+            className="gap-2 border-slate-700 text-slate-300"
           >
             <FileSpreadsheet className="h-4 w-4" />
             {isPending ? 'Memproses...' : 'Buat Excel'}
